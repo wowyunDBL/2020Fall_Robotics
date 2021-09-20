@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch> 
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+		<arg name="enable_depth" value="false"/>
+	</include>
+    
+    <node pkg="robot_qmzt" type="aruco2xyz1.py" name="aruco2xyz1" output="screen"/>
+    <node pkg="robot_qmzt" type="aruco2xyz2.py" name="aruco2xyz2" output="screen"/>
+    <node pkg="robot_qmzt" type="aruco2xyz_switch_w.py" name="aruco2xyz_switch" output="screen"/>
+    <node pkg="robot_qmzt" type="zcs_w_1100111_v1.py" name="zcs" output="screen"/>
+</launch>

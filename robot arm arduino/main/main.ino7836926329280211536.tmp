@@ -1,0 +1,140 @@
+
+#include "PID.h"
+#include "DCMotor.h"
+#include <Wire.h>
+#include <Servo.h>
+
+
+//PID parameter
+  //===============================================
+  #define kp 0.05 //2.5
+  #define ki 0.001//0.00
+  #define kd 0.0 //2.5
+  #define tolerance 5
+  int const Trigger = 15;
+  bool const trig = 1;
+  #define motor2_Pin 9
+  #define motor3_Pin 10
+  //===============================================
+
+
+  
+//build Motors
+  //=============================================
+  DCMotor motor1 = DCMotor();
+  Servo motor2;
+  Servo motor3;
+  //=============================================
+
+//build PID
+  //=============================================
+  PID pid1(kp, ki, kd, motor1.phi);
+  //=============================================
+
+//other
+  //============================================
+  long counter_L = 0;
+  //============================================
+
+
+
+void setup() {
+  Serial.begin(57600);
+  Serial.flush();
+   pinMode(Trigger, INPUT);
+   while ((analogRead(Trigger)<650) && trig){}
+  
+  SetEncoder();
+  motor1.initialDCMotor();
+  motor2.attach(motor2_Pin);
+  motor3.attach(motor3_Pin);
+  
+  // // Set up the interrupt pin, its set as active high, push-pull
+  // pinMode(intPin, INPUT);
+  // digitalWrite(intPin, LOW);
+  
+}
+
+long long int iter = 0;
+long long int tik = millis();
+int tiktok;
+double last_phi = 0;
+
+void loop() {
+  iter++;
+
+  
+  if (Serial.available()){
+    getDesiredMotorAngle(&pid1, &motor2, &motor3);
+    //Serial.println("read robot: " + String(robot1._position[0])+" "+String(robot1._position[1])+" 0 "+String(robot1.yaw));   
+  }
+  
+  if (iter%10==0){
+    getEncoder(&counter_L,&motor1);  
+  }
+  
+  Serial.print("phi: ");
+  Serial.print(motor1.phi);
+  pid1.Update(motor1.phi);
+  long duty = pid1.output();
+  Serial.print(", Duty: ");
+//  Serial.print(duty);
+//  Serial.print(", error: ");
+//  Serial.print(pid1.getError());
+//  Serial.print(", target: ");
+//  Serial.println(pid1.target);
+  if (abs(pid1.getError()) < tolerance)
+  {
+    duty = 0;
+    Serial.println("In Tolerance..");
+  }  
+   
+  if (analogRead(Trigger)<650  && trig){
+    Serial.println("Trig Stop..");
+    duty=0;
+  }
+  Serial.println(duty);
+  motor1.driveDCMotor(duty);
+  
+  // // output to Rpi
+  // if (iter%50 == 0){
+  //   //Serial.println(String(robot1._position[0])+" "+String(robot1._position[1])+" 0 "+String(robot1.yaw));
+  //   //Serial.print(dutyR);Serial.print(" ");Serial.println(dutyL);
+  //   //Serial.print("omega: ");Serial.println(commend[1]);
+  //   //Serial.print("yaw: ");Serial.println(robot1.yaw);
+  //   //Serial.print("phi: ");Serial.println(robot1.phi_R);
+    
+  //   //Serial.print("next: ");Serial.print(robot1.next_step[0]);Serial.print(" ");Serial.println(robot1.next_step[1]);
+  // }
+
+  
+  
+}
+
+void getDesiredMotorAngle(PID *pid1, Servo *motor2, Servo *motor3){
+  String str = Serial.readString();
+  Serial.flush();
+  
+  // str format = "XXX,XXX,XXX"
+  int ind[3] = {3,7,11};
+  
+  String motor1_deg_str, motor2_deg_str, motor3_deg_str;
+  double motor1_deg, motor2_deg, motor3_deg;
+
+  motor1_deg_str = str.substring(0,ind[0]);
+  motor2_deg_str = str.substring(ind[0]+1,ind[1]);
+  motor3_deg_str = str.substring(ind[1]+1,ind[2]);
+
+  motor1_deg = motor1_deg_str.toDouble();
+  motor2_deg = motor2_deg_str.toDouble();
+  motor3_deg = motor3_deg_str.toDouble();
+
+  Serial.println("direct read: "+String(motor1_deg)+","+String(motor2_deg)+","+String(motor3_deg));
+//  motor1_deg = 360;
+//  motor2_deg = 0;
+//  motor3_deg = 0;
+  pid1->target = motor1_deg;
+  motor2->write(motor2_deg);
+  motor3->write(motor3_deg);
+  
+}
