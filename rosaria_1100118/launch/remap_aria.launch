@@ -1,0 +1,21 @@
+<launch>
+  <!--node pkg="rosaria" type="RosAria" name="RosAria">
+    <remap from="/RosAria/cmd_vel" to="/cmd_vel" />
+    <remap from="/RosAria/pose" to="/odom" />
+  </node-->
+
+  <!--include file="$(find realsense2_camera)/launch/rs_camera.launch">
+		<arg name="enable_depth" value="false"/>
+  </include>
+
+  <node pkg="robot_qmzt" type="aruco2xyz1.py" name="aruco2xyz1" output="screen"/>
+  <node pkg="robot_qmzt" type="aruco2xyz2.py" name="aruco2xyz2" output="screen"/>
+  <node pkg="robot_qmzt" type="aruco2xyz_switch.py" name="aruco2xyz_switch" output="screen"/-->
+
+  <node pkg="rosaria" type="RosAria" name="RosAria" output="screen"/>
+  <node pkg="rosaria" type="position_controller.py" name="go2goal" output="screen"/>
+  <node pkg="knock_detect_node" type="knock_detection_node" name="knock_node" output="screen"/>
+  <!--node pkg="sound_play" type="soundplay_node.py" name="soundplay_node" output="screen"/-->
+
+</launch>
+
